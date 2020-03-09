@@ -1,0 +1,38 @@
+#!/bin/bash
+export TERM=xterm-256color
+# get and define uptime values
+let upSeconds="$(/usr/bin/cut -d. -f1 /proc/uptime)"
+let secs=$((${upSeconds}%60))
+let mins=$((${upSeconds}/60%60))
+let hours=$((${upSeconds}/3600%24))
+let days=$((${upSeconds}/86400))
+UPTIME=`printf "%d days, %02dh %02dm %02ds" "$days" "$hours" "$mins" "$secs"`
+# get storage values
+SDUSED=`df -h | grep 'dev/root' | awk '{print $3}'`
+SDAVAIL=`df -h | grep 'dev/root' | awk '{print $4}'`
+SDUSEDSDA=`df -h | grep 'dev/sda' | awk '{print $3}'`
+SDAVAILSDA=`df -h | grep 'dev/sda' | awk '{print $4}'`
+# get RAM values
+RAMFREE=`free -m | awk 'FNR == 2 {print $6}'`
+RAMTOTAL=`free -m | awk 'FNR == 2 {print $2}'`
+# get running processes value
+RUNPROC=`ps ax | wc -l | tr -d " "`
+# get IP adresses
+LANIP=`/sbin/ifconfig eth0 | /bin/grep "inet " | awk '{ print $2 }'`
+WANIP=`wget -q -O - http://icanhazip.com/ | tail`
+# get the load averages
+read one five fifteen rest < /proc/loadavg
+# get weather information
+WEATHER=`curl -s "http://rss.accuweather.com/rss/liveweather_rss.asp?metric=1&locCode=EN|LT|Siauliai" | sed -n '/Currently:/ s/.*: \(.*\): \([0-9]*\)\([CF]\).*/\2\3, \1/p'`
+
+echo "$(tput setaf 2)
+    .~~. .~~.             $(tput sgr0)`date +"%A, %e %B %Y, %r"`$(tput setaf 2)
+  '. \ ' ' / .'           $(tput sgr0)`uname -snrmo`$(tput setaf 1)
+   .~ .~~~..~.
+  : .~.'~'.~. :           $(tput sgr0)Uptime.............: ${UPTIME}$(tput setaf 1)
+   ~ ( ) ( ) ~            $(tput sgr0)Memory.............: ${RAMFREE} MB (Free) / ${RAMTOTAL} MB (Total)$(tput setaf 1)
+( : '~'.~.'~' : )         $(tput sgr0)Load Averages......: ${one}, ${five}, ${fifteen} (1, 5, 15 min)$(tput setaf 1)
+  ~ .~ ( ) ~. ~           $(tput sgr0)Running Processes..: ${RUNPROC}$(tput setaf 1)
+   ( : '~' : )            $(tput sgr0)Free Disk Space....: ${SDUSEDSDA} (Used) / ${SDAVAILSDA} (Free) on /dev/sda | ${SDUSED} (Used) / ${SDAVAIL} (Free) on /dev/root$(tput setaf 1)
+   '~ .~~~. ~'            $(tput sgr0)IP Addresses.......: LAN: ${LANIP} WAN: ${WANIP}$(tput setaf 1)
+       '~'                $(tput sgr0)Siauliai weather...: ${WEATHER}"
